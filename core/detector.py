@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 import pyaudio
+from enum import Enum
 
 # Configuration Constants
 SAMPLE_RATE = 44100
@@ -12,6 +13,12 @@ TRANSIENT_RATIO = 0.6
 MAX_TRANSIENT_SAMPLES = 120
 TRANSIENT_WINDOW_SAMPLES = 220
 MIN_TRANSIENT_ENERGY_RATIO = 0.25
+
+
+class SoundEvent(str, Enum):
+    """Supported local sound events."""
+
+    CLAP = "clap"
 
 
 def _has_clap_transient(audio: np.ndarray) -> bool:
@@ -44,17 +51,20 @@ def _has_clap_transient(audio: np.ndarray) -> bool:
     return transient_energy_ratio >= MIN_TRANSIENT_ENERGY_RATIO
 
 
-def detect_clap(data: bytes) -> bool:
-    """Analyzes audio data to determine if a clap sound occurred."""
+def detect_sound_event(data: bytes) -> SoundEvent | None:
+    """Analyzes audio data and returns the detected sound event, if any."""
     try:
         audio = np.frombuffer(data, dtype=np.int16).astype(np.float32)
         if audio.size == 0:
-            return False
+            return None
 
-        return _has_clap_transient(audio)
+        if _has_clap_transient(audio):
+            return SoundEvent.CLAP
+
+        return None
     except Exception as e:
-        logging.error(f"Error during clap detection: {e}")
-        return False
+        logging.error(f"Error during sound event detection: {e}")
+        return None
 
 
 class AudioStreamHandler:
