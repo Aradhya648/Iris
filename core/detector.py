@@ -6,14 +6,52 @@ import pyaudio
 SAMPLE_RATE = 44100
 CHUNK = 1024
 CLAP_THRESHOLD = 7000  # Threshold for clap detection (device-dependent; tune as needed)
+MIN_RMS = 800
+MIN_CREST_FACTOR = 5.0
+TRANSIENT_RATIO = 0.6
+MAX_TRANSIENT_SAMPLES = 120
+TRANSIENT_WINDOW_SAMPLES = 220
+MIN_TRANSIENT_ENERGY_RATIO = 0.25
+
+
+def _has_clap_transient(audio: np.ndarray) -> bool:
+    """Checks whether the signal shape resembles a short clap-like transient."""
+    abs_audio = np.abs(audio)
+    peak_index = int(np.argmax(abs_audio))
+    peak = float(abs_audio[peak_index])
+    rms = float(np.sqrt(np.mean(np.square(audio))))
+
+    if peak < CLAP_THRESHOLD or rms < MIN_RMS:
+        return False
+
+    crest_factor = peak / max(rms, 1.0)
+    if crest_factor < MIN_CREST_FACTOR:
+        return False
+
+    transient_samples = int(np.sum(abs_audio >= peak * TRANSIENT_RATIO))
+    if transient_samples > MAX_TRANSIENT_SAMPLES:
+        return False
+
+    start = max(0, peak_index - TRANSIENT_WINDOW_SAMPLES // 2)
+    end = min(len(audio), peak_index + TRANSIENT_WINDOW_SAMPLES // 2)
+    total_energy = float(np.sum(np.square(audio)))
+    window_energy = float(np.sum(np.square(audio[start:end])))
+
+    if total_energy <= 0:
+        return False
+
+    transient_energy_ratio = window_energy / total_energy
+    return transient_energy_ratio >= MIN_TRANSIENT_ENERGY_RATIO
 
 
 def detect_clap(data: bytes) -> bool:
     """Analyzes audio data to determine if a clap sound occurred."""
     try:
-        audio = np.frombuffer(data, dtype=np.int16)
-        peak = np.max(np.abs(audio))
-        return peak > CLAP_THRESHOLD
+        audio = np.frombuffer(data, dtype=np.int16).astype(np.float32)
+        if audio.size == 0:
+            return False
+
+        return _has_clap_transient(audio)
     except Exception as e:
         logging.error(f"Error during clap detection: {e}")
         return False
