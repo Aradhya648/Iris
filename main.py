@@ -1,87 +1,54 @@
-import pyaudio
-import cv2
-import numpy as np
 import time
 import logging
+import cv2
 
-# ---------- CONFIG ----------
-SAMPLE_RATE = 44100
-CHUNK = 1024
-CLAP_THRESHOLD = 7000
-CAMERA_TIMEOUT = 5
-# ----------------------------
+from core.detector import AudioStreamHandler
+from core.state import SystemState
+from modules.camera import CameraModule
+from core.router import EventRouter
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(message)s"
+    format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-p = pyaudio.PyAudio()
 
-stream = p.open(
-    format=pyaudio.paInt16,
-    channels=1,
-    rate=SAMPLE_RATE,
-    input=True,
-    frames_per_buffer=CHUNK
-)
+def main_orchestrator():
+    """Main function to initialize resources and run the detection loop."""
+    print("Listening for clap... Ctrl+C to stop")
 
-camera = None
-last_clap_time = None
-camera_active = False
+    audio_handler = AudioStreamHandler()
+    if not audio_handler.initialize_stream():
+        logging.critical("Exiting due to failure in audio initialization.")
+        return
+
+    camera_module = CameraModule()
+
+    try:
+        state = SystemState(timeout_seconds=5)
+        router = EventRouter(state=state, camera_module=camera_module)
+
+        while True:
+            audio_data = audio_handler.read_data()
+
+            if audio_data is None:
+                time.sleep(0.01)
+                continue
+
+            router.process_loop_cycle(audio_data)
+
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord("q"):
+                break
+
+    except KeyboardInterrupt:
+        pass
+
+    finally:
+        camera_module.close_camera()
+        audio_handler.close()
+        cv2.destroyAllWindows()
 
 
-def detect_clap(data):
-    audio = np.frombuffer(data, dtype=np.int16)
-    peak = np.max(np.abs(audio))
-    return peak > CLAP_THRESHOLD
-
-
-def open_camera():
-    global camera, camera_active
-    if not camera_active:
-        camera = cv2.VideoCapture(0)
-        camera_active = True
-        logging.info("Camera ON")
-
-
-def close_camera():
-    global camera, camera_active
-    if camera_active:
-        camera.release()
-        camera_active = False
-        logging.info("Camera OFF")
-
-
-print("Listening for clap... Ctrl+C to stop")
-
-try:
-    while True:
-        data = stream.read(CHUNK, exception_on_overflow=False)
-
-        if detect_clap(data):
-            last_clap_time = time.time()
-            if not camera_active:
-                open_camera()
-
-        if camera_active:
-            ret, frame = camera.read()
-            if ret:
-                cv2.imshow("Camera", frame)
-
-            if last_clap_time and (time.time() - last_clap_time > CAMERA_TIMEOUT):
-                close_camera()
-                cv2.destroyAllWindows()
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-except KeyboardInterrupt:
-    pass
-
-finally:
-    close_camera()
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-    cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main_orchestrator()
