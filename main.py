@@ -25,7 +25,7 @@ def main_orchestrator():
     camera_module = CameraModule()
 
     try:
-        state = SystemState(timeout_seconds=5)
+        state = SystemState(debounce_seconds=0.3)
         router = EventRouter(state=state, camera_module=camera_module)
 
         while True:

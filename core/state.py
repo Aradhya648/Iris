@@ -1,37 +1,39 @@
-import time
 import logging
+import time
 
 
 class SystemState:
-    """Manages the overall system state, including camera status and timeouts."""
+    """Manages camera toggle state and clap debounce tracking."""
 
-    def __init__(self, timeout_seconds: int):
+    def __init__(self, debounce_seconds: float):
         self.camera_active = False
         self.last_clap_time = None
-        self.CAMERA_TIMEOUT = timeout_seconds
+        self.clap_debounce_seconds = debounce_seconds
 
-    def update_clap_event(self) -> None:
-        """Resets the timer upon detecting a clap."""
-        self.last_clap_time = time.time()
-        logging.info("Clap detected. Resetting camera activity timer.")
+    def should_process_clap(self) -> bool:
+        """Returns True only when the clap falls outside the debounce window."""
+        current_time = time.monotonic()
 
-    def check_camera_status(self) -> tuple[bool, bool]:
-        """
-        Checks if the system requires the camera to be closed due to timeout.
-        Returns: (is_active, needs_closing)
-        """
-        if self.last_clap_time is None:
-            return self.camera_active, False
+        if self.last_clap_time is not None:
+            elapsed = current_time - self.last_clap_time
+            if elapsed < self.clap_debounce_seconds:
+                logging.info("Clap ignored during debounce window.")
+                return False
 
-        elapsed = time.time() - self.last_clap_time
-        needs_closing = elapsed > self.CAMERA_TIMEOUT
-        return self.camera_active, needs_closing
+        self.last_clap_time = current_time
+        return True
+
+    def toggle_camera_state(self) -> bool:
+        """Toggles the desired camera state and returns the new state."""
+        self.camera_active = not self.camera_active
+        logging.info("Clap accepted. Camera target state is now %s.", self.camera_active)
+        return self.camera_active
 
     def set_camera_state(self, active: bool) -> None:
         """Sets the camera's operational state."""
         self.camera_active = active
 
-    def reset_state(self):
+    def reset_state(self) -> None:
         """Resets all tracked state variables."""
         self.camera_active = False
         self.last_clap_time = None
