@@ -5,6 +5,7 @@ import cv2
 from core.detector import AudioStreamHandler
 from core.state import SystemState
 from modules.camera import CameraModule
+from modules.screenshot import ScreenshotModule
 from core.router import EventRouter
 
 logging.basicConfig(
@@ -23,10 +24,15 @@ def main_orchestrator():
         return
 
     camera_module = CameraModule()
+    screenshot_module = ScreenshotModule()
 
     try:
         state = SystemState(debounce_seconds=0.3)
-        router = EventRouter(state=state, camera_module=camera_module)
+        router = EventRouter(
+            state=state,
+            camera_module=camera_module,
+            screenshot_module=screenshot_module,
+        )
 
         while True:
             audio_data = audio_handler.read_data()

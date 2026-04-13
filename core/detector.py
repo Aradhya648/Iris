@@ -19,6 +19,7 @@ class SoundEvent(str, Enum):
     """Supported local sound events."""
 
     CLAP = "clap"
+    DOUBLE_CLAP = "double_clap"
 
 
 def _has_clap_transient(audio: np.ndarray) -> bool:
