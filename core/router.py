@@ -49,12 +49,17 @@ class EventRouter:
 
     def _dispatch_event(self, event: SoundEvent) -> None:
         """Routes a resolved sound event to its registered handler."""
+        if self.state.is_command_on_cooldown():
+            logging.info("Sound command ignored during cooldown window.")
+            return
+
         handler = self.event_handlers.get(event)
         if handler is None:
             logging.info("No handler registered for sound event: %s", event)
             return
 
         handler()
+        self.state.mark_command_executed()
 
     def _resolve_pending_clap(self) -> None:
         """Emits a single clap if the double-clap window has expired."""
@@ -71,6 +76,10 @@ class EventRouter:
         """Detects a sound event and routes it to the matching handler."""
         event = detect_sound_event(data)
         if event is None:
+            return
+
+        if self.state.is_command_on_cooldown():
+            logging.info("Detected sound ignored during command cooldown.")
             return
 
         if event is not SoundEvent.CLAP:

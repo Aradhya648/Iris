@@ -27,7 +27,7 @@ def main_orchestrator():
     screenshot_module = ScreenshotModule()
 
     try:
-        state = SystemState(debounce_seconds=0.3)
+        state = SystemState(debounce_seconds=0.3, command_cooldown_seconds=0.5)
         router = EventRouter(
             state=state,
             camera_module=camera_module,
