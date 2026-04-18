@@ -1,5 +1,6 @@
 import logging
 from core.detector import SoundEvent, detect_sound_event
+from core.history import EventHistoryLogger
 from core.state import SystemState
 from modules.camera import CameraModule
 from modules.screenshot import ScreenshotModule
@@ -23,9 +24,14 @@ class EventRouter:
         self.double_clap_window_seconds = double_clap_window_seconds
         self.last_detected_clap_time = None
         self.pending_clap_time = None
+        self.history_logger = EventHistoryLogger()
         self.event_handlers = {
             SoundEvent.CLAP: self._handle_clap_event,
             SoundEvent.DOUBLE_CLAP: self._handle_double_clap_event,
+        }
+        self.event_actions = {
+            SoundEvent.CLAP: "camera_toggle",
+            SoundEvent.DOUBLE_CLAP: "screenshot",
         }
 
     def _handle_clap_event(self) -> None:
@@ -59,6 +65,8 @@ class EventRouter:
             return
 
         handler()
+        action = self.event_actions.get(event, "unknown_action")
+        self.history_logger.log_event(event.value, action)
         self.state.mark_command_executed()
 
     def _resolve_pending_clap(self) -> None:
