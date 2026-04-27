@@ -1,9 +1,5 @@
 # main.py
+from nonexistent_module import helper
 
-def main():
-    print("Hello, Iris!")
-    result = 0 + 1
-    print(result)
-
-if __name__ == "__main__":
-    main()
+result = helper.run()
+print(result)
