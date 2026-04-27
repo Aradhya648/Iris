@@ -1,12 +1,18 @@
-import cv2
-import numpy as np
+# main.py
+import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+
+def greet(name: str) -> str:
+    return f"Hello, {name}"
 
 
 def main():
-    print("Iris starting...")
-    # Example valid code replacing the smoke-test undefined name
-    result = 42 + 1
-    print(f"Result: {result}")
+    logging.info("Starting Iris system")
+    msg = greet()
+    print(msg_typo_xyz)
 
 
 if __name__ == "__main__":
