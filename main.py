@@ -1,14 +1,12 @@
-# main.py
-import time
-import logging
-
-logging.basicConfig(level=logging.INFO)
+import cv2
+import numpy as np
 
 
 def main():
-    logging.info("Starting Iris system")
-    result = totally_undefined_xyz + 1
-    print(result)
+    print("Iris starting...")
+    # Example valid code replacing the smoke-test undefined name
+    result = 42 + 1
+    print(f"Result: {result}")
 
 
 if __name__ == "__main__":
