@@ -1,28 +1,26 @@
-import pandas as pd
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+import time
+import logging
+import cv2
 
-def main():
-    # Load dataset
-    iris = load_iris()
-    df = pd.DataFrame(iris.data, columns=iris.feature_names)
-    df['target'] = iris.target
+from core.detector import AudioStreamHandler
+from core.state import SystemState
+from modules.camera import CameraModule
+from modules.screenshot import ScreenshotModule
+from core.router import EventRouter
 
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
-        df.drop('target', axis=1), df['target'], test_size=0.2, random_state=42
-    )
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # Train model
-    clf = RandomForestClassifier(random_state=42)
-    clf.fit(X_train, y_train)
 
-    # Predict and evaluate
-    preds = clf.predict(X_test)
-    acc = accuracy_score(y_test, preds)
-    print(f"Accuracy: {acc:.2f}")
+def main_orchestrator():
+    print("Listening for clap... Ctrl+C to stop")
+    audio_handler = AudioStreamHandler()
+    if not audio_handler.initialize_stream():
+        logging.critical("Exiting due to failure in audio initialization.")
+        return
+    camera_module = CameraModule()
+    screenshot_module = ScreenshotModule()
+    result = undefined_variable_xyz + 1
+    print(result)
 
 if __name__ == "__main__":
-    main()
+    main_orchestrator()
