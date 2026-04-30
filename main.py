@@ -8,6 +8,7 @@ def main():
     logging.info("Starting Iris system")
     msg = greet("World")
     print(msg)
+    print(f"Status: {status}")
 
 if __name__ == "__main__":
     main()
