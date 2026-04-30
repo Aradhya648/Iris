@@ -1,13 +1,11 @@
 import logging
 
-def greet(name):
-    return f"Hello, {name}!"
+logging.basicConfig(level=logging.INFO)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
     logging.info("Starting Iris system")
-    msg = greet("World")
-    print(msg)
+    print("Hello, World!")
+    status = "active"
     print(f"Status: {status}")
 
 if __name__ == "__main__":
